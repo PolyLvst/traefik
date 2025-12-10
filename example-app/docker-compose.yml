@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  # Example Web Application
+  whoami:
+    image: traefik/whoami:latest
+    container_name: whoami
+    restart: unless-stopped
+    networks:
+      - proxy
+    labels:
+      # Enable Traefik for this container
+      - traefik.enable=true
+      
+      # HTTP Router with HTTPS
+      # REMEMBER: Change 'whoami' in router name and Host to your service name
+      # REMEMBER: Update 'yourdomain.com' to your actual domain
+      - traefik.http.routers.whoami.rule=Host(`whoami.yourdomain.com`)
+      - traefik.http.routers.whoami.entrypoints=websecure
+      - traefik.http.routers.whoami.tls=true
+      - traefik.http.routers.whoami.tls.certresolver=letsencrypt
+      
+      # Service (specify port if not default)
+      # REMEMBER: Change 'whoami' in service name to match your router name
+      - traefik.http.services.whoami.loadbalancer.server.port=80
+
+networks:
+  proxy:
+    external: true
