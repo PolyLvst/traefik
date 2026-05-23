@@ -1,0 +1,41 @@
+# ===============================================================
+# CBT — evaluasi.nusitek.com → Bandung VPS (HTTPS termination here)
+#
+# Why this is a file-provider entry (and not docker labels): the CBT
+# backend doesn't live as a container on this Singapore host — it
+# runs on the Bandung VPS, reachable only as a remote HTTP origin.
+# Docker labels need a sibling container on the `proxy` network;
+# file provider lets us point at any URL.
+#
+# Chain:
+#   Browser ─HTTPS→ Cloudflare edge ─HTTPS→ Traefik (this server)
+#           ─HTTP→ Bandung VPS :80 (CBT / nginx + php-fpm)
+#
+# Traefik v3 automatically sets X-Forwarded-Proto / -For / -Host on
+# the upstream request. The CBT app's index.php shim reads
+# X-Forwarded-Proto and sets $_SERVER['HTTPS'] = 'on' so CodeIgniter
+# generates https:// URLs — voice grading then works (HTTPS context).
+#
+# IMPORTANT: lock down Bandung's :80 to only accept connections from
+# this Singapore VPS's IP. Otherwise an attacker can hit Bandung
+# directly and spoof X-Forwarded-Proto into the shim.
+# ===============================================================
+
+http:
+  routers:
+    cbt-evaluasi:
+      rule: "Host(`evaluasi.nusitek.com`)"
+      entryPoints:
+        - websecure
+      service: cbt-bandung
+      tls:
+        certResolver: letsencrypt
+
+  services:
+    cbt-bandung:
+      loadBalancer:
+        # so CI on Bandung sees Host: evaluasi.nusitek.com, not the raw IP —
+        # required for base_url() / site_url() to build the right URLs.
+        passHostHeader: true
+        servers:
+          - url: "http://202.138.226.26:80"

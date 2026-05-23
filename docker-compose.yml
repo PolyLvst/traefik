@@ -27,7 +27,11 @@ services:
       - --providers.docker=true
       - --providers.docker.exposedbydefault=false
       - --providers.docker.network=proxy
-      
+
+      # File Provider — for backends that aren't sibling containers on this host
+      - --providers.file.directory=/etc/traefik/dynamic
+      - --providers.file.watch=true
+
       # Let's Encrypt (ACME)
       - --certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}
       - --certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json
@@ -40,6 +44,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./traefik-data/letsencrypt:/letsencrypt
+      - ./traefik-data/dynamic:/etc/traefik/dynamic:ro
     labels:
       # Enable Traefik for this service
       - traefik.enable=true
