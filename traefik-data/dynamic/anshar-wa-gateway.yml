@@ -1,0 +1,30 @@
+# ===============================================================
+# :8050 → reverse-proxy (pass-through) to
+#         https://anshar-wa-gateway.xobdg.nusitek.com
+#
+# Anything hitting the bare HTTP entrypoint on port 8050 is
+# forwarded transparently to the WA gateway. The client stays on
+# :8050 (no 302); Traefik proxies the request and relays the
+# response. Path/query are preserved as-is.
+#
+# passHostHeader: false → Traefik rewrites the Host header (and TLS
+# SNI) to the upstream host so the backend's vhost routing and
+# Let's Encrypt cert match.
+#
+# The "wagateway" entrypoint (:8050) is declared in docker-compose.yml.
+# ===============================================================
+
+http:
+  routers:
+    anshar-wa-gateway:
+      rule: "PathPrefix(`/`)"
+      entryPoints:
+        - wagateway
+      service: anshar-wa-gateway
+
+  services:
+    anshar-wa-gateway:
+      loadBalancer:
+        passHostHeader: false
+        servers:
+          - url: "https://anshar-wa-gateway.xobdg.nusitek.com"
