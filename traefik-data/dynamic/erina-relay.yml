@@ -1,0 +1,23 @@
+http:
+  routers:
+    erina-sg-in:
+      rule: "Host(`erina-relay-sg-to-xobdg.nusitek.com`)"
+      entryPoints:
+        - websecure
+      service: erina-sg-in
+      tls:
+        certResolver: letsencrypt
+
+  services:
+    erina-sg-in:
+      loadBalancer:
+        # Rewrite Host to erina-api.xobdg.nusitek.com so the migration VPS Traefik
+        # router (Host(`erina-api.xobdg.nusitek.com`)) matches.
+        passHostHeader: false
+        servers:
+          - url: "https://erina-api.xobdg.nusitek.com"
+        serversTransport: migration-upstream
+
+  serversTransports:
+    migration-upstream:
+      serverName: "erina-api.xobdg.nusitek.com"
