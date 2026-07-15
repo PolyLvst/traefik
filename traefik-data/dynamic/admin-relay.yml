@@ -1,0 +1,23 @@
+http:
+  routers:
+    admin-sg-in:
+      rule: "Host(`admin-relay-sg-to-xobdg.nusitek.com`)"
+      entryPoints:
+        - websecure
+      service: admin-sg-in
+      tls:
+        certResolver: letsencrypt
+
+  services:
+    admin-sg-in:
+      loadBalancer:
+        # Rewrite Host to erina-admin.xobdg.nusitek.com so the migration VPS Traefik
+        # router (Host(`erina-admin.xobdg.nusitek.com`)) matches.
+        passHostHeader: false
+        servers:
+          - url: "https://erina-admin.xobdg.nusitek.com"
+        serversTransport: admin-migration-upstream
+
+  serversTransports:
+    admin-migration-upstream:
+      serverName: "erina-admin.xobdg.nusitek.com"
